@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Web.Script.Serialization;
 using System.Xml;
+using MapDataTools;
 
 namespace NetposaTest
 {
@@ -24,9 +26,9 @@ namespace NetposaTest
 
     public class Pano72Yun
     {
-        [NonSerialized] 
+        [ScriptIgnore] 
         private string _config;
-
+        [ScriptIgnore] 
         public string Config
         {
             get { return _config; }
@@ -68,7 +70,7 @@ namespace NetposaTest
                     autoLoad = true,
                     autoRotate = true,
                     title = this.SceneItems[0].Title,
-                    author = "netposa",
+                    //author = "netposa",
                     type = "cubemap",
                     basePath = string.Format("{0}/", this.SceneItems[0].PanoId),
                     cubeMap = new string[]
@@ -92,7 +94,7 @@ namespace NetposaTest
                         title = item.Title,
                         type = "cubemap",
                         basePath = string.Format("{0}/", item.PanoId),
-                        thumb = item.Thumb,
+                        thumb = string.Format("{0}/thumb.jpg",  item.PanoId),
                         cubeMap = new string[]
                         {
                             "l.jpg",
@@ -104,6 +106,7 @@ namespace NetposaTest
                         }
                     };
                 });
+
                 p = new
                 {
                     autoLoad = true,
@@ -144,7 +147,8 @@ namespace NetposaTest
             html.Append("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">         ").AppendLine();
             html.AppendFormat("    <title>{0}</title>                                                 ",this.Name).AppendLine();
             html.Append(
-                "    <link type=\"text/css\" rel=\"Stylesheet\" href=\"/Project/pano/pannellum/src/css/pannellum.css\" />").AppendLine();
+                "    <link type=\"text/css\" rel=\"Stylesheet\" href=\"http://cdn.bootcss.com/pannellum/2.3.2/pannellum.css\" />").AppendLine();
+ 
             html.Append("</head>                                                                                ").AppendLine();
             html.Append("                                                                                       ").AppendLine();
             html.Append("<body>                                                                                 ").AppendLine();
@@ -219,9 +223,16 @@ namespace NetposaTest
     }
    public class Yun720Tool
    {
-       private string configUrl = "http://xml.qncdn.720static.com/@/{0}/{0}.xml";
 
-       public Pano72Yun GetPicUrlByKey(string key, string pano_id)
+
+       /// <summary>
+       /// 
+       /// </summary>
+       /// <param name="key"></param>
+       /// <param name="pano_id"></param>
+       /// <param name="configUrl">默认为 http://xml.qncdn.720static.com/@/{0}/{0}.xml </param>
+       /// <returns></returns>
+       public Pano72Yun GetPicUrlByKey(string key, string pano_id, string configUrl = "http://xml.qncdn.720static.com/@/{0}/{0}.xml")
        {
            var list = new List<SceneItem>();
            var content = HttpHelper.GetRequestContent(string.Format(configUrl, key));
@@ -269,6 +280,50 @@ namespace NetposaTest
                scene.Title = dic[scene.PanoId].title;
            });
            return new Pano72Yun() { Config = content, SceneItems = list, Key = pano_id, Id= key };
+       }
+
+       /// <summary>
+       /// 
+       /// </summary>
+       /// <param name="key"></param>
+       /// <param name="pano_id"></param>
+       /// <param name="configUrl">默认为 http://www.new720.com/tour/xml?id={0} </param>
+       /// <returns></returns>
+       public Pano72Yun GetPanoNew72YunByKey(string key, string pano_id, string configUrl = "http://www.new720.com/tour/xml?id={0}")
+       {
+           var list = new List<SceneItem>();
+           var content = HttpHelper.GetRequestContent(string.Format(configUrl, key));
+           XmlDocument xmlDocument = new XmlDocument();
+           xmlDocument.LoadXml(content);
+           var scenes = xmlDocument.SelectNodes("krpano/scene");
+           // 解析场景
+           for (int i = 0; i < scenes.Count; i++)
+           {
+               var item = new SceneItem()
+               {
+                   PanoId = scenes[i].Attributes["name"].InnerText,
+                   Thumb = scenes[i].Attributes["thumburl"].InnerText,
+                   Title = scenes[i].Attributes["title"].InnerText,
+                   PreViewUrl = scenes[i].SelectSingleNode("preview").Attributes["url"].InnerText
+               };
+               item.Tilesize = int.Parse(scenes[i].SelectSingleNode("image").Attributes["tilesize"].InnerText);
+               var nodes = scenes[i].SelectSingleNode("image").SelectNodes("level");
+
+               for (int j = 0; j < nodes.Count; j++)
+               {
+                   var url = nodes[j].SelectSingleNode("cube").Attributes["url"].InnerText;
+                   item.CubeImages.Add(new CubeImage()
+                   {
+                       Url = url,
+                       TiledImageHeight = nodes[j].Attributes["tiledimageheight"].InnerText,
+                       TiledImageWidth = nodes[j].Attributes["tiledimagewidth"].InnerText,
+                       Level = int.Parse(url.Substring(url.IndexOf("/panos/%s/") + "/panos/%s/".Length, 2).Trim('l'))
+                   });
+               }
+               list.Add(item);
+           }
+           
+           return new Pano72Yun() { Config = content, SceneItems = list, Key = pano_id, Id = key };
        }
    }
 }

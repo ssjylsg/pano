@@ -68,25 +68,43 @@ namespace NetposaTest
         {
 
             var itemSource = JsonHelper.JsonSerializer(pano72Yuns.Values.ToList());
-            using (var stream = new FileStream(this.panoSource, FileMode.OpenOrCreate))
+            if (File.Exists(this.panoSource))
             {
+                File.Delete(this.panoSource);
+            }
+            using (var stream = new FileStream(this.panoSource, FileMode.OpenOrCreate))
+            { 
                 var buffer = System.Text.UTF8Encoding.UTF8.GetBytes(itemSource);
                 stream.Write(buffer, 0, buffer.Length);
             }
         }
 
-        void tooYun720_OnCompleteHandler()
+        private void tooYun720_OnCompleteHandler()
         {
             this.BeginInvoke(
                 new MethodInvoker(
-                    () => this.toolStripStatusLabel1.Text = "处理完成"));
+                    () =>
+                    {
+                        if (!this.IsDisposed)
+                        {
+                            this.toolStripStatusLabel1.Text = "处理完成";
+                        }
+                    }
+                    ));
         }
 
         private void tooYun720_OnProcessImageHandler(CubeImage cubeImage, string panId)
         {
             this.BeginInvoke(
                 new MethodInvoker(
-                    () => this.toolStripStatusLabel1.Text = string.Format("正在处理{0}第{1}数据", panId, cubeImage.Level)));
+                    () =>
+                    {
+                        if (!this.IsDisposed)
+                        {
+                            this.toolStripStatusLabel1.Text = string.Format("正在处理{0}第{1}数据", panId, cubeImage.Level);
+                        }
+                    }
+                    ));
         }
 
         void chromeWebBrowser1_BrowserNewWindow(object sender, NewWindowEventArgs e)
@@ -101,11 +119,11 @@ namespace NetposaTest
             {
                 chromeWebBrowser1.OpenUrl(this.textBox1.Text);
                 var query = this.textBox1.Text.Substring(this.textBox1.Text.LastIndexOf("/")+1);
-                if (query.Split('?').Length >= 2)
+                if (query.Split('?').Length >= 1)
                 {
                     this.key.Text = query.Split('?')[0];
-                    this.pano_id.Text = query.Split('?')[1].Split('=')[1];
-                    var pano = yun720Tool.GetPicUrlByKey(this.key.Text, this.pano_id.Text);
+                    //this.pano_id.Text = query.Split('?')[1].Split('=')[1];
+                    var pano = yun720Tool.GetPicUrlByKey(this.key.Text, "");
                     this.dataGridView1.Tag = pano;
                     reload = true;
                     this.dataGridView1.DataSource = pano.SceneItems;
@@ -125,6 +143,7 @@ namespace NetposaTest
                 this.comboBox1.Items.Clear();
                 this.comboBox1.Items.AddRange(this.pano72Yuns.Keys.ToArray());
                 this.comboBox1.SelectedItem = this.chromeWebBrowser1.Title;
+                form_Closing(null, null);
                 new Thread(() =>
                 {
                     tooYun720.DownLoadFile(pano);

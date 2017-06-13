@@ -76,8 +76,12 @@ namespace NetposaTest
         {
             var items = this.bindingSource.ToList();
             var itemSource = JsonHelper.JsonSerializer(items);
-            using (var stream = new FileStream(this.panoSource, FileMode.OpenOrCreate))
+            if (File.Exists(this.panoSource))
             {
+                File.Delete(this.panoSource);
+            }
+            using (var stream = new FileStream(this.panoSource, FileMode.CreateNew))
+            { 
                 var buffer = System.Text.UTF8Encoding.UTF8.GetBytes(itemSource);
                 stream.Write(buffer, 0, buffer.Length);
             }

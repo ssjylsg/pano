@@ -94,9 +94,10 @@ namespace NetposaTest
             html.Append("<head>                                                                                 ").AppendLine();
             html.Append("    <meta charset=\"utf-8\">                                                           ").AppendLine();
             html.Append("    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">         ").AppendLine();
-            html.Append("    <title>Pannellum</title>                                                           ").AppendLine();
+            html.AppendFormat("    <title>{0}</title>                                             ",this.RoadName).AppendLine();
             html.Append(
-                "    <link type=\"text/css\" rel=\"Stylesheet\" href=\"/Project/pano/pannellum/src/css/pannellum.css\" />").AppendLine();
+                "    <link type=\"text/css\" rel=\"Stylesheet\" href=\"http://cdn.bootcss.com/pannellum/2.3.2/pannellum.css\" />").AppendLine();
+ 
             html.Append("</head>                                                                                ").AppendLine();
             html.Append("                                                                                       ").AppendLine();
             html.Append("<body>                                                                                 ").AppendLine();
